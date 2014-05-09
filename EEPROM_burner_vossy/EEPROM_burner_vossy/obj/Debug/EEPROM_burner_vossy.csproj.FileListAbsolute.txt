@@ -1,0 +1,1 @@
+C:\Users\Sverrir\Documents\GitHub\EEPromBurner\EEPROM_burner_vossy\EEPROM_burner_vossy\bin\Debug\EEPROM_burner_vossy.exe.config
