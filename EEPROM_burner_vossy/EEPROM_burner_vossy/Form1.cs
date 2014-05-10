@@ -24,8 +24,9 @@ namespace EEPROM_burner_vossy
 
         private void btnHexRead_Click(object sender, EventArgs e)
         {
+            //clear the textbox to write new stuff
             rtbCodeView.Clear();
-
+            //open a filedialog
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
                 tbxHexFile.Text = openFileDialog1.FileName;
@@ -35,18 +36,20 @@ namespace EEPROM_burner_vossy
                     {
                         for (int a = 0; a < myStream.Length; a++)
                         {
-                            //.ToString("X") konvertiert eine zahl zu String(aber als hex)
+                            //Read the filestream bytewise an put it in the codebox
                             int b = myStream.ReadByte();
                             if (b < 16) rtbCodeView.AppendText("0");
-
+                            //.ToString("X") conterts an int to a string(in hex)
                             rtbCodeView.AppendText(b.ToString("X") + " ");
                         }
                     }
+                    //shows that reading is finished
                     listBox1.Items.Add("File loaded ...");
                     listBox1.SelectedIndex = listBox1.Items.Count - 1;
                 }
                 catch (Exception ex)
                 {
+                    //if an exeption occurs it is showed in the list
                     listBox1.Items.Add("Error: Could not read file from disk. Original error: " + ex.Message);
                 }
             }
@@ -54,37 +57,38 @@ namespace EEPROM_burner_vossy
 
         private void btn_burn_Click(object sender, EventArgs e)
         {
+            //checking if a file is loaded
             if (tbxHexFile.Text!="")
             {
-                //Streamposition zurücksetzen damit vom ersten byte gelesen wird
+                //setting the streamposition to 0 to start from the beginning of the stream
                 myStream.Position = 0;
                 
-                //Byte 51 senden damit der Arduino weiß, dass geschrieben werden soll
+                //sending byte 51 to get the arduino in burning mode
                 byte cmd = 51;
                 byte[] b = BitConverter.GetBytes(cmd);
                 serialPort1.Write(b, 0, 1);
 
-                //Es sollen 8192 Byte gesendet werden
+                //8192 Byte should be written
                 int laenge = 8192;               
                 
-                //die äussere schleife wird in 1024 gesendeten Byte intervallen aufgerufen
+                //the outter loop steps with 1024 Bytes
                 for (int a = 0; a < laenge/1024; a++)
                 {
-                    //Die innere schleife sendet 1024 Byte hintereinander
+                    //the inner loop writes 1024 Byte Blocks
                     for (int ii = 0; ii < 1024; ii++)
                     {
-                        //sende byte wenn der Stream beendet ist, soll eine 0 gesendet werden
+                        //send the Stream Bytes except when the stream is finished, then fill with "00" Bytes
                         if (myStream.Length <= a*1024+ii)
                             cmd = Convert.ToByte(0);
                         else
                             cmd = Convert.ToByte(myStream.ReadByte());
-                        //Ausgeben was gesendet wurde
+                        //write every Byte in the list
                         listBox1.Items.Add("Sending Byte[" + (a*1024+ii) + "]: " + cmd.ToString("X"));
                         byte[] bb = BitConverter.GetBytes(cmd);
-                        //senden
+                        //send
                         serialPort1.Write(bb, 0, 1);
                     }
-                    //Es wird gewartet, dass der Arduino fertig geschrieben hat und dies mitteilt
+                    //wait until the arduino sends the ready byte
                     serialPort1.Read(b,0,1);
                 }
             }
@@ -93,31 +97,31 @@ namespace EEPROM_burner_vossy
         private void btnRead_Click(object sender, EventArgs e)
         {
             int a = 0;
-            // ein Byte mit "50" Senden damit der arduino weiß, dass gelesen werden soll
+            // Send byte 50 to set the arduino into "read mode"
             byte cmd = 50;
             byte[] b = BitConverter.GetBytes(cmd);
             serialPort1.Write(b, 0, 1);
 
-            //Es sollen 8192 Byte gelesen werden
+            //8192Bytes should be read
             long laenge = 8192;
-            
+            //while not everything is read
             while (a<laenge)
             {
                 try
                 {
-                    //empfangen der Bytes vom arduino
+                    //receiving single bytes from the arduino
                     serialPort1.Read(b, 0, 1);
                 }
                 catch (TimeoutException to)
                 {
-                    //userinfo falls der arduino nicht antwortet
+                    //userinfo if anything goes wrong
                     listBox1.Items.Add("Arduino not responding ... - CANCEL!");
                     break;
                 }
-                //Byte in int convertieren damit es ausgegeben werden kann
+                //convert byte to int
                 int readByte = BitConverter.ToInt32(b, 0);
 
-                //Byte ausgeben
+                //Byte output
                 listBox1.Items.Add("Byte[" + (a) + "]: " + readByte.ToString("X"));
                 a++;
             }
@@ -127,13 +131,21 @@ namespace EEPROM_burner_vossy
         {
             try
             {
-                serialPort1.Close();        //todesangst unddo
+                try
+                {
+                    //if there is an open connection it should be closed
+                    serialPort1.Close();        
+                }
+                catch { };
+                serialPort1.PortName = cbxCom.Text;
+                serialPort1.ReadTimeout = 100000;
+                serialPort1.WriteTimeout = 10000;
+                serialPort1.Open();
             }
-            catch { };
-            serialPort1.PortName = cbxCom.Text;
-            serialPort1.ReadTimeout = 1000000;
-            serialPort1.WriteTimeout = 100000;
-            serialPort1.Open();
+            catch
+            {
+                MessageBox.Show("This is no active Comport :(");
+            }
         }
     }
 }

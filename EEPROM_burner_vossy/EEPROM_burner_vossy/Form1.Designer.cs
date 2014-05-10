@@ -99,7 +99,7 @@
             this.btnHexRead.Name = "btnHexRead";
             this.btnHexRead.Size = new System.Drawing.Size(111, 23);
             this.btnHexRead.TabIndex = 4;
-            this.btnHexRead.Text = "Code einlesen";
+            this.btnHexRead.Text = "read Hex file";
             this.btnHexRead.UseVisualStyleBackColor = true;
             this.btnHexRead.Click += new System.EventHandler(this.btnHexRead_Click);
             // 
